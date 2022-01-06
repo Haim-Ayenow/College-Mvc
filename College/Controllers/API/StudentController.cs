@@ -11,42 +11,18 @@ namespace College.Controllers.API
 {
     public class StudentController : ApiController
     {
-        string ConnectionString = "Data Source=desktop-l8k7db0;Initial Catalog=CollegeDB;Integrated Security=True;Pooling=False";
+        static string ConnectionString = "Data Source=desktop-l8k7db0;Initial Catalog=CollegeDB;Integrated Security=True;Pooling=False";
         // GET: api/Student
-        List<Student> listOfStudents = new List<Student>();
+        DataClasses1DataContext CollegeDB = new DataClasses1DataContext(ConnectionString);
+     
         public IHttpActionResult Get()
         {
 
 
             try
             {
-                using (SqlConnection connection = new SqlConnection(ConnectionString))
-                {
-                    connection.Open();
-                    string query = @"SELECT * FROM Students";
-                    SqlCommand command = new SqlCommand(query, connection);
-                    SqlDataReader dataFromDB = command.ExecuteReader();
-                    if (dataFromDB.HasRows)
-                    {
-                        while (dataFromDB.Read())
-                        {
-                            listOfStudents.Add(new Student(
-                                dataFromDB.GetString(1),
-                            dataFromDB.GetString(2),
-                            dataFromDB.GetDateTime(3),
-                            dataFromDB.GetString(4),
-                            dataFromDB.GetInt32(5)));
-                        }
-                        return Ok(new { listOfStudents });
-                    }
-                    //else
-                    //{
-                    //    Console.WriteLine("no rows in table");
-                    //}
-                    //return listOfStudents;
-                    connection.Close();
-                    return Ok(new { listOfStudents });
-                }
+         return Ok(CollegeDB.Students.ToList());
+                
 
             }
             catch (SqlException err)
@@ -66,28 +42,8 @@ namespace College.Controllers.API
         {
             try
             {
-                using (SqlConnection connection = new SqlConnection(ConnectionString))
-                {
-                    connection.Open();
-                    string query = $@"SELECT * FROM Students WHERE Id={id}";
-                    SqlCommand Command = new SqlCommand(query, connection);
-                    SqlDataReader dataFromDB = Command.ExecuteReader();
-                    if (dataFromDB.HasRows)
-                    {
-                        while (dataFromDB.Read())
-                        {
-                            listOfStudents.Add(new Student(
-                            dataFromDB.GetString(1),
-                            dataFromDB.GetString(2),
-                            dataFromDB.GetDateTime(3),
-                            dataFromDB.GetString(4),
-                            dataFromDB.GetInt32(5)));
-                        }
-                        return Ok(new { listOfStudents });
-                    }
-                    connection.Close();
-                    return Ok(new { listOfStudents });
-                }
+                return Ok(CollegeDB.Students.First((StudentItem) => StudentItem.Id == id));
+                
 
             }
             catch (SqlException err)
@@ -101,38 +57,14 @@ namespace College.Controllers.API
         }
 
         // POST: api/Student
-        public IHttpActionResult Post([FromBody] string value)
+        public IHttpActionResult Post([FromBody] Student student)
         {
             try
             {
-                using (SqlConnection connection = new SqlConnection(ConnectionString))
-                {
-                    connection.Open();
-                    string query = @"INSERT INTO Students (FName,LName,BirthDay,Email,YearSchool)
-                                     VALUES('djfs','jkfhcds',01-01-2020,'kdsj@jfhjk',8)";
-                    SqlCommand command = new SqlCommand(query, connection);
-                    SqlDataReader dataFromDB = command.ExecuteReader();
-                    if (dataFromDB.HasRows)
-                    {
-                        while (dataFromDB.Read())
-                        {
-                            listOfStudents.Add(new Student(
-                                dataFromDB.GetString(1),
-                            dataFromDB.GetString(2),
-                            dataFromDB.GetDateTime(3),
-                            dataFromDB.GetString(4),
-                            dataFromDB.GetInt32(5)));
-                        }
-                        return Ok(new { listOfStudents });
-                    }
-                    //else
-                    //{
-                    //    Console.WriteLine("no rows in table");
-                    //}
-                    //return listOfStudents;
-                    connection.Close();
-                    return Ok(new { listOfStudents });
-                }
+                CollegeDB.Students.InsertOnSubmit(student);
+                CollegeDB.SubmitChanges();
+                return Ok("item was add");
+             
 
             }
             catch (SqlException err)
@@ -146,17 +78,48 @@ namespace College.Controllers.API
         }
 
         // PUT: api/Student/5
-        public void Put(int id, [FromBody] string value)
+        public IHttpActionResult Put(int id, [FromBody] Student student)
         {
+            try
+            {
+                Student StudentFound = CollegeDB.Students.First((StudentItem) => StudentItem.Id == id);
+                StudentFound.FName = student.FName;
+                StudentFound.LName=student.LName;
+                StudentFound.Email=student.Email;
+                StudentFound.BirthDay=student.BirthDay;
+                StudentFound.YearSchool=student.YearSchool;
+                CollegeDB.SubmitChanges();
+                return Ok("item was update");
+            }
+            catch(SqlException err)
+            {
+                return Ok(new { err.Message });
+            }
+            catch(Exception err)
+            {
+                return Ok(new { err.Message });
+            }
         }
 
         // DELETE: api/Student/5
-        public void Delete(int id)
+        public IHttpActionResult Delete(int id)
         {
-        }
-        static void SqlData(string ConnectionString)
-        {
+            try
+            {
+                CollegeDB.Students.DeleteOnSubmit(CollegeDB.Students.First((studentItem) => studentItem.Id == id));
+                CollegeDB.SubmitChanges();
 
+                return Ok("item was deleted");
+            }
+            catch (SqlException err)
+            {
+                return Ok(new { err.Message });
+            }
+            catch(Exception err)
+            {
+                return Ok(new { err.Message });
+            }
         }
+
     }
 }
